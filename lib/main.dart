@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'entry_screen.dart';
+import 'services/api_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.instance.initialize();
   runApp(const MyApp());
 }
 

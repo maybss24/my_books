@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'services/api_service.dart';
 
 class AddBookPage extends StatefulWidget {
-  final Map<String, String>? initialBook;
+  final Map<String, dynamic>? initialBook;
 
   const AddBookPage({super.key, this.initialBook});
 
@@ -39,9 +40,40 @@ class _AddBookPageState extends State<AddBookPage> {
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
-      setState(() {
-        _imagePath = picked.path;
-      });
+      try {
+        print('Image picked: ${picked.path}');
+        final file = File(picked.path);
+        print('File size: ${await file.length()} bytes');
+        print('File exists: ${await file.exists()}');
+        
+        print('Uploading image to server...');
+        final result = await ApiService.instance.uploadImage(file);
+        print('Upload result: $result');
+        
+        setState(() {
+          _imagePath = result['data']['url'];
+        });
+        print('Image path set to: $_imagePath');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error uploading image: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload image: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -83,10 +115,32 @@ class _AddBookPageState extends State<AddBookPage> {
                   child: SizedBox(
                     width: 180,
                     height: 277,
-                    child: Image.file(
-                      File(_imagePath!),
-                      fit: BoxFit.cover,
-                    ),
+                    child: _imagePath!.startsWith('http')
+                        ? Image.network(
+                            _imagePath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                              );
+                            },
+                          )
+                        : _imagePath!.startsWith('/uploads/')
+                            ? Image.network(
+                                'http://192.168.193.186:8080$_imagePath',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey.shade200,
+                                    child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                                  );
+                                },
+                              )
+                            : Image.file(
+                                File(_imagePath!),
+                                fit: BoxFit.cover,
+                              ),
                   ),
                 )
                     : Container(

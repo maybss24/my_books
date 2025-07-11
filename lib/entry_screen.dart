@@ -14,8 +14,9 @@ class _EntryScreenState extends State<EntryScreen> {
 
   final List<String> images = [
     "assets/book22.jpeg",
-    "assets/books.webp",
-    "assets/book22.jpeg", // You can change or add more here
+    "assets/book23.jpg",
+    "assets/book24.jpg",
+    // You can change or add more here
   ];
 
   @override
@@ -66,7 +67,7 @@ class _EntryScreenState extends State<EntryScreen> {
               child: Column(
                 children: [
                   Text(
-                    "Read your favourite books",
+                    "Read your favorite books",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
@@ -76,7 +77,7 @@ class _EntryScreenState extends State<EntryScreen> {
                   ),
                   SizedBox(height: 14),
                   Text(
-                    "All your favorite books in one place. Read at home, while traveling, or wherever you are.",
+                    "Books aren’t just pages — they’re portals. Each title you save is a journey waiting to unfold. Let’s build your universe, one story at a time.",
                     style: TextStyle(fontSize: 14.5, color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),

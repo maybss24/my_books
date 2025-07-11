@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'add_book_page.dart';
 
 class BookDetailsPage extends StatelessWidget {
-  final Map<String, String> book;
-  final Function(Map<String, String>) onBookEdited;
+  final Map<String, dynamic> book;
+  final Function(Map<String, dynamic>) onBookEdited;
   final VoidCallback onBookDeleted;
 
   const BookDetailsPage({
@@ -80,10 +80,48 @@ class BookDetailsPage extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: hasImage
-                    ? Image.file(
-                  File(imagePath!),
-                  fit: BoxFit.cover,
-                )
+                    ? imagePath!.startsWith('http')
+                        ? Image.network(
+                            imagePath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.deepPurple.shade50,
+                                alignment: Alignment.center,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.broken_image, size: 60, color: Colors.deepPurple),
+                                    SizedBox(height: 6),
+                                    Text("No Cover Image", style: TextStyle(color: Colors.deepPurple)),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : imagePath!.startsWith('/uploads/')
+                            ? Image.network(
+                                'http://192.168.193.186:8080$imagePath',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.deepPurple.shade50,
+                                    alignment: Alignment.center,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.broken_image, size: 60, color: Colors.deepPurple),
+                                        SizedBox(height: 6),
+                                        Text("No Cover Image", style: TextStyle(color: Colors.deepPurple)),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
+                            : Image.file(
+                                File(imagePath!),
+                                fit: BoxFit.cover,
+                              )
                     : Container(
                   color: Colors.deepPurple.shade50,
                   alignment: Alignment.center,

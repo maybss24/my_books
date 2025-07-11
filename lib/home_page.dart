@@ -1,9 +1,9 @@
-// ... imports remain unchanged
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'add_book_page.dart';
 import 'book_details_page.dart';
 import 'entry_screen.dart';
+import 'services/api_service.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -14,39 +14,140 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, String>> books = [];
-  List<Map<String, String>> filteredBooks = [];
+  List<Map<String, dynamic>> books = [];
+  List<Map<String, dynamic>> filteredBooks = [];
   final TextEditingController _searchController = TextEditingController();
   String _selectedGenre = 'All';
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_filterBooks);
+    _loadBooks();
   }
 
-  void addBook(Map<String, String> newBook) {
-    setState(() {
-      books.add(newBook);
-      _filterBooks();
-    });
-  }
-
-  void updateBook(Map<String, String> oldBook, Map<String, String> updatedBook) {
-    setState(() {
-      final index = books.indexOf(oldBook);
-      if (index != -1) {
-        books[index] = updatedBook;
-        _filterBooks();
+  Future<void> _loadBooks() async {
+    setState(() => _isLoading = true);
+    try {
+      print('Testing API connection...');
+      
+      // First test the health endpoint
+      try {
+        final health = await ApiService.instance.healthCheck();
+        print('Health check successful: $health');
+      } catch (e) {
+        print('Health check failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cannot connect to server. Make sure backend is running on port 3001.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
       }
-    });
+      
+      print('Loading books from API...');
+      final booksData = await ApiService.instance.getBooks();
+      print('Books loaded: ${booksData.length}');
+      print('Books data: $booksData');
+      
+      setState(() {
+        books = booksData;
+        _filterBooks();
+      });
+      
+      print('Filtered books: ${filteredBooks.length}');
+    } catch (e) {
+      print('Error loading books: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load books: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
-  void deleteBook(Map<String, String> bookToDelete) {
-    setState(() {
-      books.remove(bookToDelete);
-      _filterBooks();
-    });
+  Future<void> addBook(Map<String, dynamic> newBook) async {
+    try {
+      final result = await ApiService.instance.createBook(
+        title: newBook['title'] ?? '',
+        author: newBook['author'] ?? '',
+        year: newBook['year'],
+        genre: newBook['genre'] ?? 'Other',
+        imagePath: newBook['imagePath'],
+      );
+      
+      setState(() {
+        books.add(result['data']);
+        _filterBooks();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add book: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> updateBook(Map<String, dynamic> oldBook, Map<String, dynamic> updatedBook) async {
+    try {
+      final result = await ApiService.instance.updateBook(
+        id: oldBook['_id'] ?? '',
+        title: updatedBook['title'] ?? '',
+        author: updatedBook['author'] ?? '',
+        year: updatedBook['year'],
+        genre: updatedBook['genre'] ?? 'Other',
+        imagePath: updatedBook['imagePath'],
+      );
+      
+      setState(() {
+        final index = books.indexOf(oldBook);
+        if (index != -1) {
+          books[index] = result['data'];
+          _filterBooks();
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update book: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> deleteBook(Map<String, dynamic> bookToDelete) async {
+    try {
+      await ApiService.instance.deleteBook(bookToDelete['_id'] ?? '');
+      setState(() {
+        books.remove(bookToDelete);
+        _filterBooks();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete book: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _filterBooks() {
@@ -63,7 +164,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> _getGenres() {
-    final genres = books.map((b) => b['genre'] ?? 'Other').toSet().toList();
+    final genres = books.map((b) => (b['genre'] ?? 'Other').toString()).toSet().toList();
 
     // Always include 'Fiction' and 'Non-fiction'
     if (!genres.contains('Fiction')) genres.add('Fiction');
@@ -147,9 +248,39 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: filteredBooks.isEmpty
-                  ? const Center(child: Text("No matching books found.", style: TextStyle(fontSize: 16, color: Colors.grey)))
-                  : GridView.builder(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredBooks.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.book, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                books.isEmpty 
+                                    ? "No books found. Add your first book!" 
+                                    : "No matching books found.",
+                                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                              if (books.isEmpty) ...[
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final newBook = await Navigator.push<Map<String, dynamic>>(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const AddBookPage()),
+                                    );
+                                    if (newBook != null) await addBook(newBook);
+                                  },
+                                  child: const Text("Add Your First Book"),
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
@@ -164,7 +295,7 @@ class _HomePageState extends State<HomePage> {
 
                   return GestureDetector(
                     onTap: () async {
-                      final updatedBook = await Navigator.push<Map<String, String>>(
+                      final updatedBook = await Navigator.push<Map<String, dynamic>>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => BookDetailsPage(
@@ -194,7 +325,39 @@ class _HomePageState extends State<HomePage> {
                           ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             child: hasImage
-                                ? Image.file(File(imagePath!), height: 180, width: double.infinity, fit: BoxFit.cover)
+                                ? imagePath!.startsWith('http')
+                                    ? Image.network(
+                                        imagePath!,
+                                        height: 180,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            height: 180,
+                                            color: Colors.deepPurple.shade100,
+                                            child: const Center(
+                                              child: Icon(Icons.broken_image, size: 50, color: Colors.deepPurple),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : imagePath!.startsWith('/uploads/')
+                                        ? Image.network(
+                                            'http://192.168.193.186:8080$imagePath',
+                                            height: 180,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Container(
+                                                height: 180,
+                                                color: Colors.deepPurple.shade100,
+                                                child: const Center(
+                                                  child: Icon(Icons.broken_image, size: 50, color: Colors.deepPurple),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Image.file(File(imagePath!), height: 180, width: double.infinity, fit: BoxFit.cover)
                                 : Container(
                               height: 180,
                               color: Colors.deepPurple.shade100,
@@ -227,11 +390,11 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final newBook = await Navigator.push<Map<String, String>>(
+          final newBook = await Navigator.push<Map<String, dynamic>>(
             context,
             MaterialPageRoute(builder: (_) => const AddBookPage()),
           );
-          if (newBook != null) addBook(newBook);
+          if (newBook != null) await addBook(newBook);
         },
         backgroundColor: Colors.deepPurple,
         icon: const Icon(Icons.add),
