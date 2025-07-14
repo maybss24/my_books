@@ -32,7 +32,13 @@ const validateBook = [
   body('imagePath')
     .optional()
     .isString()
-    .withMessage('Image path must be a string')
+    .withMessage('Image path must be a string'),
+  
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Description cannot be more than 1000 characters')
 ];
 
 

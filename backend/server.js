@@ -10,14 +10,14 @@ const bookRoutes = require('./routes/bookRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:8081', 'http://192.168.193.186:8080'],
+  origin: ['http://192.168.193.194:8080', 'http://192.168.193.194:8081', 'http://localhost:8080', 'http://localhost:8081'],
   credentials: true
 }));
 

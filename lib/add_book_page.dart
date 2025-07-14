@@ -17,6 +17,7 @@ class _AddBookPageState extends State<AddBookPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   String _genre = 'Other';
   String? _imagePath;
 
@@ -30,6 +31,7 @@ class _AddBookPageState extends State<AddBookPage> {
       _titleController.text = book['title'] ?? '';
       _authorController.text = book['author'] ?? '';
       _yearController.text = book['year'] ?? '';
+      _descriptionController.text = book['description'] ?? '';
       _genre = book['genre'] ?? 'Other';
       _imagePath = book['imagePath'];
     }
@@ -83,6 +85,7 @@ class _AddBookPageState extends State<AddBookPage> {
         'title': _titleController.text.trim(),
         'author': _authorController.text.trim(),
         'year': _yearController.text.trim(),
+        'description': _descriptionController.text.trim(),
         'genre': _genre,
         'imagePath': _imagePath ?? '',
       };
@@ -128,7 +131,7 @@ class _AddBookPageState extends State<AddBookPage> {
                           )
                         : _imagePath!.startsWith('/uploads/')
                             ? Image.network(
-                                'http://192.168.193.186:8080$_imagePath',
+                                'http://192.168.193.194:8080$_imagePath',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
@@ -189,6 +192,20 @@ class _AddBookPageState extends State<AddBookPage> {
                 decoration: InputDecoration(
                   labelText: 'Published Year',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// Description Field
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Enter a brief description of the book...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  alignLabelWithHint: true,
                 ),
               ),
 

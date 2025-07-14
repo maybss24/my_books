@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.193.186:8080/api'; // For your network
+  static const String baseUrl = 'http://192.168.193.194:8080/api'; // For your network
   // static const String baseUrl = 'http://10.0.2.2:8080/api'; // For Android emulator
   // static const String baseUrl = 'http://localhost:8080/api'; // For web
 
@@ -87,6 +87,7 @@ class ApiService {
     String? year,
     required String genre,
     String? imagePath,
+    String? description,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/books'),
@@ -97,6 +98,7 @@ class ApiService {
         'year': year,
         'genre': genre,
         'imagePath': imagePath ?? '',
+        'description': description ?? '',
       }),
     );
 
@@ -110,6 +112,7 @@ class ApiService {
     String? year,
     required String genre,
     String? imagePath,
+    String? description,
   }) async {
     final response = await http.put(
       Uri.parse('$baseUrl/books/$id'),
@@ -120,6 +123,7 @@ class ApiService {
         'year': year,
         'genre': genre,
         'imagePath': imagePath ?? '',
+        'description': description ?? '',
       }),
     );
 

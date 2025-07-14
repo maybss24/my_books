@@ -83,6 +83,7 @@ class _HomePageState extends State<HomePage> {
         year: newBook['year'],
         genre: newBook['genre'] ?? 'Other',
         imagePath: newBook['imagePath'],
+        description: newBook['description'],
       );
       
       setState(() {
@@ -110,6 +111,7 @@ class _HomePageState extends State<HomePage> {
         year: updatedBook['year'],
         genre: updatedBook['genre'] ?? 'Other',
         imagePath: updatedBook['imagePath'],
+        description: updatedBook['description'],
       );
       
       setState(() {
@@ -292,6 +294,8 @@ class _HomePageState extends State<HomePage> {
                   final book = filteredBooks[index];
                   final imagePath = book['imagePath'];
                   final hasImage = imagePath != null && imagePath.isNotEmpty;
+                  
+
 
                   return GestureDetector(
                     onTap: () async {
@@ -343,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                                       )
                                     : imagePath!.startsWith('/uploads/')
                                         ? Image.network(
-                                            'http://192.168.193.186:8080$imagePath',
+                                            'http://192.168.193.194:8080$imagePath',
                                             height: 180,
                                             width: double.infinity,
                                             fit: BoxFit.cover,

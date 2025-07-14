@@ -101,7 +101,7 @@ class BookDetailsPage extends StatelessWidget {
                           )
                         : imagePath!.startsWith('/uploads/')
                             ? Image.network(
-                                'http://192.168.193.186:8080$imagePath',
+                                'http://192.168.193.194:8080$imagePath',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
@@ -157,6 +157,37 @@ class BookDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Description Card
+            if (book['description'] != null && book['description'].toString().isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                color: Colors.grey.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Description',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        book['description'],
+                        style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -203,6 +234,8 @@ class DetailRow extends StatelessWidget {
           child: Text(
             value,
             style: const TextStyle(fontSize: 16, color: Colors.black87),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

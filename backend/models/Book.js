@@ -35,6 +35,11 @@ const bookSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: [1000, 'Description cannot be more than 1000 characters']
+  },
   userId: {
     type: String,
     default: 'default-user'
