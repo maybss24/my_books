@@ -101,7 +101,7 @@ class BookDetailsPage extends StatelessWidget {
                           )
                         : imagePath!.startsWith('/uploads/')
                             ? Image.network(
-                                'http://192.168.193.194:8080$imagePath',
+                                'http://192.168.193.200:5000$imagePath',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(

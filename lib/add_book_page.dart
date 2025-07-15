@@ -39,7 +39,12 @@ class _AddBookPageState extends State<AddBookPage> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024, // Limit image size to reduce upload time
+      maxHeight: 1024,
+      imageQuality: 85, // Compress image to reduce file size
+    );
 
     if (picked != null) {
       try {
@@ -47,6 +52,26 @@ class _AddBookPageState extends State<AddBookPage> {
         final file = File(picked.path);
         print('File size: ${await file.length()} bytes');
         print('File exists: ${await file.exists()}');
+        
+        // Show loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Uploading image...'),
+                ],
+              ),
+              duration: Duration(seconds: 30), // Long duration for upload
+            ),
+          );
+        }
         
         print('Uploading image to server...');
         final result = await ApiService.instance.uploadImage(file);
@@ -58,20 +83,44 @@ class _AddBookPageState extends State<AddBookPage> {
         print('Image path set to: $_imagePath');
         
         if (mounted) {
+          // Clear the loading snackbar
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Image uploaded successfully!'),
               backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
         }
       } catch (e) {
         print('Error uploading image: $e');
         if (mounted) {
+          // Clear the loading snackbar
+          ScaffoldMessenger.of(context).clearSnackBars();
+          
+          String errorMessage = 'Failed to upload image';
+          
+          if (e.toString().contains('timed out') || e.toString().contains('timeout')) {
+            errorMessage = 'Upload timed out. Please check your internet connection and try again.';
+          } else if (e.toString().contains('too large')) {
+            errorMessage = 'Image file is too large. Please select a smaller image (max 5MB).';
+          } else if (e.toString().contains('network')) {
+            errorMessage = 'Network error. Please check your internet connection.';
+          } else if (e.toString().contains('not an image')) {
+            errorMessage = 'Please select a valid image file (JPEG, PNG, GIF, WebP).';
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to upload image: ${e.toString()}'),
+              content: Text(errorMessage),
               backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _pickImage(),
+              ),
             ),
           );
         }
@@ -131,7 +180,7 @@ class _AddBookPageState extends State<AddBookPage> {
                           )
                         : _imagePath!.startsWith('/uploads/')
                             ? Image.network(
-                                'http://192.168.193.194:8080$_imagePath',
+                                'http://192.168.193.200:5000$_imagePath',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(

@@ -3,9 +3,14 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.193.194:8080/api'; // For your network
-  // static const String baseUrl = 'http://10.0.2.2:8080/api'; // For Android emulator
-  // static const String baseUrl = 'http://localhost:8080/api'; // For web
+  // Use this for physical device on same WiFi
+  static const String baseUrl = 'http://192.168.193.200:5000/api';
+  // Use this for Android emulator
+  // static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Use this for web
+  // static const String baseUrl = 'http://localhost:5000/api';
+  
+  
 
   static ApiService? _instance;
   static ApiService get instance => _instance ??= ApiService._internal();
@@ -50,8 +55,6 @@ class ApiService {
       );
     }
   }
-
-
 
   // Book Methods
   Future<List<Map<String, dynamic>>> getBooks({String? query, String? genre}) async {
@@ -201,22 +204,6 @@ class ApiService {
     );
 
     _handleResponse(response);
-  }
-
-  // Health check
-  Future<Map<String, dynamic>> healthCheck() async {
-    print('Testing health check...');
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/health'),
-        headers: _headers,
-      );
-
-      return _handleResponse(response);
-    } catch (e) {
-      print('Health check failed: $e');
-      rethrow;
-    }
   }
 }
 

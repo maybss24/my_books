@@ -30,25 +30,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadBooks() async {
     setState(() => _isLoading = true);
     try {
-      print('Testing API connection...');
-      
-      // First test the health endpoint
-      try {
-        final health = await ApiService.instance.healthCheck();
-        print('Health check successful: $health');
-      } catch (e) {
-        print('Health check failed: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Cannot connect to server. Make sure backend is running on port 3001.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-      
       print('Loading books from API...');
       final booksData = await ApiService.instance.getBooks();
       print('Books loaded: ${booksData.length}');
@@ -347,7 +328,7 @@ class _HomePageState extends State<HomePage> {
                                       )
                                     : imagePath!.startsWith('/uploads/')
                                         ? Image.network(
-                                            'http://192.168.193.194:8080$imagePath',
+                                            'http://192.168.193.200:5000$imagePath',
                                             height: 180,
                                             width: double.infinity,
                                             fit: BoxFit.cover,

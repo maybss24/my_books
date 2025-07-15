@@ -57,7 +57,9 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
+    files: 1, // Only allow 1 file
+    fieldSize: 1024 * 1024 // 1MB for field data
   },
   fileFilter: fileFilter
 });
@@ -82,6 +84,12 @@ router.post('/image', upload.single('image'), async (req, res) => {
       mimetype: req.file.mimetype,
       path: req.file.path
     });
+
+    // Verify file was actually saved
+    if (!fs.existsSync(req.file.path)) {
+      console.error('File was not saved to disk');
+      return res.status(500).json({ error: 'Failed to save file to disk' });
+    }
 
     // Create the URL for the uploaded file
     const imageUrl = `/uploads/${req.file.filename}`;
@@ -112,13 +120,17 @@ router.delete('/image/:filename', async (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(uploadsDir, filename);
 
+    console.log('Delete request for file:', filename);
+
     // Check if file exists
     if (!fs.existsSync(filePath)) {
+      console.log('File not found:', filePath);
       return res.status(404).json({ error: 'Image file not found' });
     }
 
     // Delete the file
     fs.unlinkSync(filePath);
+    console.log('File deleted successfully:', filename);
 
     res.json({
       success: true,
@@ -136,8 +148,11 @@ router.get('/image/:filename', async (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(uploadsDir, filename);
 
+    console.log('Get info request for file:', filename);
+
     // Check if file exists
     if (!fs.existsSync(filePath)) {
+      console.log('File not found:', filePath);
       return res.status(404).json({ error: 'Image file not found' });
     }
 
@@ -168,6 +183,12 @@ router.use((error, req, res, next) => {
     console.log('Multer error code:', error.code);
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: 'Too many files. Only one file is allowed.' });
+    }
+    if (error.code === 'LIMIT_FIELD_COUNT') {
+      return res.status(400).json({ error: 'Too many fields in the form.' });
     }
     return res.status(400).json({ error: error.message });
   }

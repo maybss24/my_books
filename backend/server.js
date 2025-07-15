@@ -2,32 +2,23 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
-require('dotenv').config({ path: './config.env' });
+require('dotenv').config();
 
 const bookRoutes = require('./routes/bookRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://192.168.193.194:8080', 'http://192.168.193.194:8081', 'http://localhost:8080', 'http://localhost:8081'],
+  origin: ['http://192.168.193.200:5000', 'http://10.0.2.2:5000', 'http://localhost:5000'],
   credentials: true
 }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -39,15 +30,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // API Routes
 app.use('/api/books', bookRoutes);
 app.use('/api/upload', uploadRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'My Books API is running',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -69,7 +51,6 @@ mongoose.connect(process.env.MONGODB_URI)
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   })
   .catch((error) => {
